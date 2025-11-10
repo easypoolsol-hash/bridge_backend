@@ -1,0 +1,21 @@
+# Django Core
+Django==5.2.7
+djangorestframework==3.15.2
+
+# Database
+psycopg2-binary==2.9.9
+
+# Firebase Authentication
+firebase-admin==6.4.0
+
+# WSGI Server
+gunicorn==22.0.0
+
+# CORS
+django-cors-headers==4.3.1
+
+# Environment Variables
+python-decouple==3.8
+
+# Timezone Support
+pytz==2024.1

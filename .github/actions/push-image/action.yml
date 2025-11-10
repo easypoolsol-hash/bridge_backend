@@ -1,0 +1,59 @@
+name: Push Image to Artifact Registry
+description: Push Docker image to GCP Artifact Registry with SHA tagging (using Workload Identity)
+
+inputs:
+  image_tag:
+    description: 'Target image tag (staging, candidate, latest)'
+    required: true
+  sha_tag_prefix:
+    description: 'Prefix for SHA tag (staging, candidate, production)'
+    required: true
+  version_tag:
+    description: 'Optional version tag for production (e.g., v1.0.0)'
+    required: false
+    default: ''
+  workload_identity_provider:
+    description: 'GCP Workload Identity Provider'
+    required: true
+  service_account:
+    description: 'GCP Service Account email'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Authenticate to GCP
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: ${{ inputs.workload_identity_provider }}
+        service_account: ${{ inputs.service_account }}
+        token_format: 'access_token'
+
+    - name: Authenticate Docker to Artifact Registry
+      shell: bash
+      run: |
+        echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://asia-south1-docker.pkg.dev
+
+    - name: Push to Artifact Registry
+      shell: bash
+      run: |
+        IMAGE_URL="asia-south1-docker.pkg.dev/bridge-477812/bridge-repo/bridge-api"
+
+        # Tag and push main image
+        docker tag bridge-api:${{ inputs.image_tag }} $IMAGE_URL:${{ inputs.image_tag }}
+        docker push $IMAGE_URL:${{ inputs.image_tag }}
+
+        # Tag and push SHA-tagged version
+        docker tag bridge-api:${{ inputs.image_tag }} $IMAGE_URL:${{ inputs.sha_tag_prefix }}-${{ github.sha }}
+        docker push $IMAGE_URL:${{ inputs.sha_tag_prefix }}-${{ github.sha }}
+
+        echo "Image pushed: $IMAGE_URL:${{ inputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "SHA-tagged: $IMAGE_URL:${{ inputs.sha_tag_prefix }}-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+        # Push version tag if provided (for production)
+        if [ -n "${{ inputs.version_tag }}" ]; then
+          docker tag bridge-api:${{ inputs.image_tag }} $IMAGE_URL:${{ inputs.version_tag }}
+          docker push $IMAGE_URL:${{ inputs.version_tag }}
+          echo "Version tagged: $IMAGE_URL:${{ inputs.version_tag }}" >> $GITHUB_STEP_SUMMARY
+        fi

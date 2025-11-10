@@ -1,0 +1,48 @@
+name: Build Docker Image
+description: Build Docker image and save as artifact for later use
+
+inputs:
+  image_tag:
+    description: 'Image tag to use'
+    required: true
+
+outputs:
+  artifact_name:
+    description: 'Name of the uploaded artifact'
+    value: docker-image-${{ inputs.image_tag }}-${{ github.sha }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        load: true
+        tags: |
+          bridge-api:${{ inputs.image_tag }}
+          bridge-api:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Get image digest
+      id: digest
+      shell: bash
+      run: |
+        DIGEST=$(docker inspect bridge-api:${{ inputs.image_tag }} --format='{{.Id}}')
+        echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+        echo "Image digest: $DIGEST"
+        echo "**Image Digest:** \`$DIGEST\`" >> $GITHUB_STEP_SUMMARY
+
+    - name: Build summary
+      shell: bash
+      run: |
+        echo "## Docker Image Built ✅" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Tag:** \`${{ inputs.image_tag }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Cache:** GHA layer cache (fast rebuilds)" >> $GITHUB_STEP_SUMMARY

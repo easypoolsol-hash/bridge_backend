@@ -1,0 +1,224 @@
+name: Unified CI/CD Pipeline
+
+on:
+  push:
+    branches: [ develop, staging, production ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  IMAGE_NAME: bridge-api
+  GCR_IMAGE: asia-south1-docker.pkg.dev/bridge-477812/bridge-repo/bridge-api
+
+jobs:
+  # ============================================================================
+  # UNIFIED FLOW - CORRECT ORDER
+  # ============================================================================
+  # 1. Show path marker (which branch → which environment)
+  # 2. Quality checks (parallel - lint + mypy)
+  # 3. Build image (tests need this!)
+  # 4. Tests using built image (parallel matrix)
+  # 5. Security + Smoke tests (parallel)
+  # 6. Deploy to environment (three isolated branches at end)
+  # ============================================================================
+
+  # STEP 1: PATH MARKER - Shows which environment will be deployed
+  show-path:
+    name: 🎯 PATH → ${{ github.ref_name }} → ${{ github.ref_name == 'develop' && 'DEV' || github.ref_name == 'staging' && 'STAGING' || 'PRODUCTION' }}
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.detect.outputs.environment }}
+      branch: ${{ steps.detect.outputs.branch }}
+    steps:
+      - name: Detect and show deployment path
+        id: detect
+        run: |
+          BRANCH="${{ github.ref_name }}"
+
+          # Big clear marker showing the path
+          echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓" >> $GITHUB_STEP_SUMMARY
+          echo "┃                                                       ┃" >> $GITHUB_STEP_SUMMARY
+          echo "┃   🎯 PIPELINE PATH MARKER                            ┃" >> $GITHUB_STEP_SUMMARY
+          echo "┃                                                       ┃" >> $GITHUB_STEP_SUMMARY
+
+          case "$BRANCH" in
+            develop)
+              ENV="dev"
+              echo "┃   Branch: develop    →    Environment: DEV         ┃" >> $GITHUB_STEP_SUMMARY
+              ;;
+            staging)
+              ENV="staging"
+              echo "┃   Branch: staging    →    Environment: STAGING     ┃" >> $GITHUB_STEP_SUMMARY
+              ;;
+            production)
+              ENV="production"
+              echo "┃   Branch: production →    Environment: PRODUCTION  ┃" >> $GITHUB_STEP_SUMMARY
+              ;;
+            *)
+              echo "┃   ❌ UNKNOWN BRANCH: $BRANCH                        ┃" >> $GITHUB_STEP_SUMMARY
+              echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛" >> $GITHUB_STEP_SUMMARY
+              exit 1
+              ;;
+          esac
+
+          echo "┃                                                       ┃" >> $GITHUB_STEP_SUMMARY
+          echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Flow:** Quality → Build → Tests (use image) → Security + Smoke → Deploy to $ENV" >> $GITHUB_STEP_SUMMARY
+
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+  # STEP 2: Quality checks (parallel - doesn't need image)
+  quality:
+    name: ✅ Quality
+    runs-on: ubuntu-latest
+    needs: [show-path]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/run-quality-checks
+
+  # STEP 3: Build image FIRST (tests need this!)
+  build:
+    name: 🏗️ Build Image
+    runs-on: ubuntu-latest
+    needs: [show-path, quality]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          image_tag: ${{ needs.show-path.outputs.environment }}
+
+  # STEP 4: Tests using the built image (parallel matrix)
+  tests:
+    name: 🧪 Test (${{ matrix.test-type }})
+    runs-on: ubuntu-latest
+    needs: [show-path, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        test-type: [unit, integration, contract]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/load-from-cache
+        with:
+          image_tag: ${{ needs.show-path.outputs.environment }}
+          fail_if_missing: 'true'
+      - uses: ./.github/actions/run-tests
+        with:
+          test_type: ${{ matrix.test-type }}
+          image_name: ${{ env.IMAGE_NAME }}
+
+  # STEP 5: Security scan (parallel with smoke - both use built image)
+  security:
+    name: 🔒 Security
+    runs-on: ubuntu-latest
+    needs: [show-path, build, tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/load-from-cache
+        with:
+          image_tag: ${{ needs.show-path.outputs.environment }}
+          fail_if_missing: 'true'
+      - uses: ./.github/actions/run-security-scan
+        with:
+          image_name: ${{ env.IMAGE_NAME }}
+
+  # STEP 5: Smoke tests (parallel with security)
+  smoke:
+    name: 💨 Smoke
+    runs-on: ubuntu-latest
+    needs: [show-path, build, tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/load-from-cache
+        with:
+          image_tag: ${{ needs.show-path.outputs.environment }}
+          fail_if_missing: 'true'
+      - uses: ./.github/actions/run-smoke-test
+        with:
+          image_name: ${{ env.IMAGE_NAME }}
+
+  # ============================================================================
+  # STEP 6: THREE ISOLATED DEPLOY BRANCHES (clear which one runs)
+  # ============================================================================
+
+  deploy-dev:
+    name: 🚀 Deploy DEV
+    runs-on: ubuntu-latest
+    needs: [show-path, build, tests, security, smoke]
+    if: needs.show-path.outputs.environment == 'dev'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/load-from-cache
+        with:
+          image_tag: dev
+          fail_if_missing: 'true'
+      - uses: ./.github/actions/push-image
+        with:
+          image_tag: dev
+          sha_tag_prefix: dev
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/deploy-cloudrun
+        with:
+          environment: dev
+          image_tag: dev
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+  deploy-staging:
+    name: 🚀 Deploy STAGING
+    runs-on: ubuntu-latest
+    needs: [show-path, build, tests, security, smoke]
+    if: needs.show-path.outputs.environment == 'staging'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/load-from-cache
+        with:
+          image_tag: staging
+          fail_if_missing: 'true'
+      - uses: ./.github/actions/push-image
+        with:
+          image_tag: staging
+          sha_tag_prefix: staging
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/deploy-cloudrun
+        with:
+          environment: staging
+          image_tag: staging
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+  deploy-production:
+    name: 🚀 Deploy PRODUCTION
+    runs-on: ubuntu-latest
+    needs: [show-path, build, tests, security, smoke]
+    if: needs.show-path.outputs.environment == 'production'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/load-from-cache
+        with:
+          image_tag: production
+          fail_if_missing: 'true'
+      - uses: ./.github/actions/push-image
+        with:
+          image_tag: latest
+          sha_tag_prefix: production
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - uses: ./.github/actions/deploy-cloudrun
+        with:
+          environment: production
+          image_tag: latest
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
