@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "bridge-backend"
+version = "0.1.0"
+description = "Bridge Backend API for Insurance Platform"
+authors = ["EasyPool <easypoolsol@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+Django = "5.2.7"
+djangorestframework = "3.15.2"
+psycopg2-binary = "2.9.9"
+firebase-admin = "6.4.0"
+gunicorn = "22.0.0"
+django-cors-headers = "4.3.1"
+python-decouple = "3.8"
+pytz = "2024.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
