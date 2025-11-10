@@ -25,9 +25,9 @@ runs:
       shell: bash
       run: |
         # Start container (FAIL if this errors - no || true)
-        docker run -d --name smoke-test -p 8000:8000 \
+        docker run -d --name smoke-test -p 8080:8080 \
           -e DATABASE_URL=sqlite:////tmp/test.db \
-          -e DJANGO_SETTINGS_MODULE=bus_kiosk_backend.settings \
+          -e DJANGO_SETTINGS_MODULE=bridge_backend.settings \
           -e USE_FILE_LOGGING=false \
           -e ALLOWED_HOSTS=localhost,127.0.0.1,testserver \
           ${{ inputs.image_name }}:test
@@ -35,7 +35,7 @@ runs:
         # Wait for health endpoint
         echo "Waiting for health endpoint..."
         for i in {1..30}; do
-          if curl -fsS http://localhost:8000/health/ >/dev/null 2>&1; then
+          if curl -fsS http://localhost:8080/ >/dev/null 2>&1; then
             echo "✓ Health check passed"
             break
           fi
