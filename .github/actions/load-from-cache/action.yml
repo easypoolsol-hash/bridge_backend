@@ -22,14 +22,14 @@ runs:
         context: .
         push: false
         load: true
-        tags: backend_easy:${{ inputs.image_tag }}
+        tags: bridge-api:${{ inputs.image_tag }}
         cache-from: type=gha
 
     - name: Verify cache loaded
       if: inputs.fail_if_missing == 'true'
       shell: bash
       run: |
-        if ! docker image inspect backend_easy:${{ inputs.image_tag }} >/dev/null 2>&1; then
+        if ! docker image inspect bridge-api:${{ inputs.image_tag }} >/dev/null 2>&1; then
           echo "ERROR: No image found in GitHub cache"
           echo "ERROR: Build and test on develop first"
           exit 1
