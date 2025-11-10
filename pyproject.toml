@@ -1,20 +1,97 @@
-[tool.poetry]
-name = "bridge-backend"
-version = "0.1.0"
-description = "Bridge Backend API for Insurance Platform"
-authors = ["EasyPool <easypoolsol@gmail.com>"]
-
-[tool.poetry.dependencies]
-python = "^3.11"
-Django = "5.2.7"
-djangorestframework = "3.15.2"
-psycopg2-binary = "2.9.9"
-firebase-admin = "6.4.0"
-gunicorn = "22.0.0"
-django-cors-headers = "4.3.1"
-python-decouple = "3.8"
-pytz = "2024.1"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bridge-backend"
+version = "1.0.0"
+description = "Bridge Backend API for Insurance Platform"
+license = {text = "MIT"}
+requires-python = ">=3.11,<3.13"
+authors = [
+    {name = "EasyPool Team", email = "easypoolsol@gmail.com"},
+]
+
+dependencies = [
+    # Django Core
+    "Django==5.2.7",
+    "djangorestframework==3.15.2",
+
+    # Database
+    "psycopg2-binary==2.9.9",
+
+    # Firebase Authentication
+    "firebase-admin==6.4.0",
+
+    # WSGI Server
+    "gunicorn==22.0.0",
+
+    # CORS
+    "django-cors-headers==4.3.1",
+
+    # Environment Variables
+    "python-decouple==3.8",
+
+    # Timezone Support
+    "pytz==2024.1",
+]
+
+[tool.setuptools]
+packages.find.exclude = ["config", "tests", "docs", "scripts", "migrations"]
+
+[project.optional-dependencies]
+dev = [
+    # Type checking
+    "django-stubs>=5.0.0,<6.0",
+    "djangorestframework-stubs>=3.14.0,<4.0",
+    "mypy>=1.18.0,<2.0",
+
+    # Linting
+    "ruff>=0.13.0,<1.0",
+]
+
+testing = [
+    "pytest>=8.0.0,<9.0",
+    "pytest-django>=4.5.0,<5.0",
+]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
+follow_imports = "silent"
+warn_unused_configs = true
+show_error_codes = true
+cache_dir = ".cache/mypy"
+files = ["app"]
+
+[tool.django-stubs]
+django_settings_module = "bridge_backend.settings"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 150
+cache-dir = ".cache/ruff"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "DJ",  # flake8-django
+    "RUF", # ruff-specific rules
+    "I",   # isort
+]
+
+ignore = [
+    "DJ001",
+    "DJ008",
+    "RUF012",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*.py" = ["E501", "F401"]
+"*/settings/*.py" = ["F401"]
+"*/tests/*.py" = ["B011", "S101"]
+"**/models.py" = ["RUF012"]
