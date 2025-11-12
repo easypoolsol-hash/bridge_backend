@@ -112,6 +112,10 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # API uses token auth (Firebase JWT), not sessions - CSRF not needed
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
 }
 
 
@@ -134,6 +138,20 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-# Firebase Admin SDK configuration
-# Service account JSON path from environment variable
-FIREBASE_CREDENTIALS_PATH = os.environ.get("FIREBASE_CREDENTIALS_PATH")
+# Firebase Admin SDK Initialization
+# Following backend_easy pattern - initialize at settings load time
+try:
+    import json
+    import firebase_admin
+    from firebase_admin import credentials
+
+    _firebase_key = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY")
+    if _firebase_key and not firebase_admin._apps:
+        cred = credentials.Certificate(json.loads(_firebase_key))
+        firebase_admin.initialize_app(cred)
+        print("[FIREBASE] Firebase Admin initialized successfully")
+    elif not _firebase_key:
+        print("[FIREBASE] FIREBASE_SERVICE_ACCOUNT_KEY not set - Firebase auth will not work")
+except (ImportError, ValueError, KeyError) as e:
+    print(f"[FIREBASE] Firebase initialization failed: {e}")
+    pass  # Firebase optional in local/CI environments
