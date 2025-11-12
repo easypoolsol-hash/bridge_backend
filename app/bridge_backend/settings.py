@@ -7,6 +7,7 @@ Following 12-factor app methodology and Fortune 500 best practices.
 
 import os
 import re
+import urllib.parse
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -96,12 +97,14 @@ if DATABASE_URL:
             match = re.match(r"postgres(?:ql)?://([^:]+):([^@]+)@/([^?]+)\?host=(.+)", DATABASE_URL)
             if match:
                 user, password, dbname, host = match.groups()
+                password = urllib.parse.unquote(password)  # URL-decode password
             else:
                 raise ValueError(f"Invalid Cloud SQL DATABASE_URL format: {DATABASE_URL}")
         else:
             match = re.match(r"postgres(?:ql)?://([^:]+):([^@]+)@//cloudsql/([^/]+)/(.+)", DATABASE_URL)
             if match:
                 user, password, instance, dbname = match.groups()
+                password = urllib.parse.unquote(password)  # URL-decode password
                 host = f"/cloudsql/{instance}"
             else:
                 raise ValueError(f"Invalid Cloud SQL DATABASE_URL format: {DATABASE_URL}")
@@ -126,6 +129,7 @@ if DATABASE_URL:
         match = re.match(r"postgres(?:ql)?://([^:]+):([^@]+)@([^:]+):?(\d+)?/(.+)", DATABASE_URL)
         if match:
             user, password, host, port, dbname = match.groups()
+            password = urllib.parse.unquote(password)  # URL-decode password
             DATABASES = {
                 "default": {
                     "ENGINE": "django.db.backends.postgresql",
