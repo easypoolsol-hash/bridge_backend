@@ -134,6 +134,15 @@ run_db_init() {\n\
         else\n\
             echo "⚠️  [DB-INIT] Admin creation failed (non-critical)"\n\
         fi\n\
+        \n\
+        # Seed form templates (provides initial product forms)\n\
+        # Only runs if migrations succeed (DB is working)\n\
+        echo "📋 [DB-INIT] Seeding form templates..."\n\
+        if python manage.py seed_forms; then\n\
+            echo "✅ [DB-INIT] Form templates seeded successfully"\n\
+        else\n\
+            echo "⚠️  [DB-INIT] Form seeding failed (non-critical)"\n\
+        fi\n\
     else\n\
         echo "❌ [DB-INIT] Migrations failed - database commands skipped"\n\
         echo "⚠️  [DB-INIT] App will start but may not function correctly"\n\
