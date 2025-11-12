@@ -112,18 +112,33 @@ run_db_init() {\n\
         attempt=$((attempt + 1))\n\
     done\n\
     \n\
-    # Run migrations\n\
+    # Run migrations (CRITICAL - app functionality depends on this)\n\
     echo "📦 [DB-INIT] Running migrations..."\n\
     if python manage.py migrate --noinput; then\n\
         echo "✅ [DB-INIT] Migrations completed"\n\
+        \n\
+        # Seed groups and permissions (Google Cloud IAM best practice)\n\
+        # Only runs if migrations succeed (DB is working)\n\
+        echo "🔐 [DB-INIT] Seeding groups and permissions..."\n\
+        if python manage.py seed_groups; then\n\
+            echo "✅ [DB-INIT] Groups seeded successfully"\n\
+        else\n\
+            echo "⚠️  [DB-INIT] Group seeding failed (non-critical)"\n\
+        fi\n\
+        \n\
+        # Create bootstrap admin (Google Cloud best practice)\n\
+        # Only runs if migrations succeed (DB is working)\n\
+        echo "👤 [DB-INIT] Creating bootstrap admin..."\n\
+        if python manage.py create_hardcoded_admin; then\n\
+            echo "✅ [DB-INIT] Bootstrap admin ready"\n\
+        else\n\
+            echo "⚠️  [DB-INIT] Admin creation failed (non-critical)"\n\
+        fi\n\
     else\n\
-        echo "⚠️  [DB-INIT] Migrations failed"\n\
+        echo "❌ [DB-INIT] Migrations failed - database commands skipped"\n\
+        echo "⚠️  [DB-INIT] App will start but may not function correctly"\n\
         return 1\n\
     fi\n\
-    \n\
-    # Create bootstrap admin (Google Cloud best practice)\n\
-    echo "👤 [DB-INIT] Creating bootstrap admin..."\n\
-    python manage.py create_hardcoded_admin || echo "⚠️  [DB-INIT] Admin creation deferred"\n\
 }\n\
 \n\
 # Start database initialization in background\n\

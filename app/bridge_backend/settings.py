@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party apps
+    "rest_framework",
+    "corsheaders",
     # Custom apps
     "accounts",
     "products",
@@ -54,6 +57,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # Google Cloud Run best practice
+    "corsheaders.middleware.CorsMiddleware",  # CORS must be before CommonMiddleware
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -231,3 +235,69 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
+
+# ==============================================================================
+# REST FRAMEWORK CONFIGURATION
+# ==============================================================================
+
+REST_FRAMEWORK = {
+    # Authentication
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "bridge_backend.core.authentication.FirebaseAuthentication",  # Firebase JWT tokens
+        "rest_framework.authentication.SessionAuthentication",  # Django admin/browsable API
+    ],
+    # Permissions (secure by default)
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",  # Require authentication for all endpoints
+    ],
+    # Pagination
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+    # Renderers
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",  # Only in DEBUG mode
+    ],
+    # Throttling (protect against abuse)
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
+    },
+}
+
+# ==============================================================================
+# FIREBASE ADMIN SDK CONFIGURATION
+# ==============================================================================
+
+import firebase_admin
+from firebase_admin import credentials
+
+# Initialize Firebase Admin SDK
+# Service account key is injected via Secret Manager in Cloud Run
+FIREBASE_SERVICE_ACCOUNT_KEY = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY")
+
+if FIREBASE_SERVICE_ACCOUNT_KEY:
+    try:
+        import json
+
+        cred_dict = json.loads(FIREBASE_SERVICE_ACCOUNT_KEY)
+        cred = credentials.Certificate(cred_dict)
+
+        # Only initialize if not already initialized
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred)
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
+elif DEBUG:
+    # Development mode: Firebase optional (use session auth for admin panel)
+    import logging
+
+    logger = logging.getLogger(__name__)
+    logger.warning("Firebase Admin SDK not initialized (FIREBASE_SERVICE_ACCOUNT_KEY not set)")
