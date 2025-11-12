@@ -71,10 +71,10 @@ USER django
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
+    CMD curl -f http://localhost:8000/ || exit 1
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8000
 
 # Create production-grade startup script
 USER root
@@ -129,9 +129,9 @@ run_db_init &\n\
 sleep 2\n\
 \n\
 # Start the server IMMEDIATELY\n\
-echo "✅ Application starting on port 8080"\n\
+echo "✅ Application starting on port 8000"\n\
 echo "🔐 Admin: /admin/ (admin / admin)"\n\
-exec gunicorn --bind 0.0.0.0:8080 --workers 2 --threads 4 --timeout 0 bridge_backend.wsgi:application' > /app/start.sh && \
+exec gunicorn --bind 0.0.0.0:8000 --workers 2 --threads 4 --timeout 0 bridge_backend.wsgi:application' > /app/start.sh && \
     chmod +x /app/start.sh && \
     chown django:django /app/start.sh
 
