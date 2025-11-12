@@ -20,12 +20,15 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
+from bridge_backend.auth_viewsets import AuthViewSet
 from bridge_backend.health import health_check, liveness_check, readiness_check
 from leads.viewsets import LeadViewSet
 from products.viewsets import MainCategoryViewSet, ProductViewSet, SubCategoryViewSet
 
 # API Router
 router = DefaultRouter()
+# Google Cloud API pattern: Resource-oriented design
+router.register(r"users", AuthViewSet, basename="users")
 router.register(r"products/main-categories", MainCategoryViewSet, basename="main-category")
 router.register(r"products/sub-categories", SubCategoryViewSet, basename="sub-category")
 router.register(r"products/products", ProductViewSet, basename="product")
