@@ -71,7 +71,6 @@ LOGGING = {
     },
 }
 
-# Firebase - Optional in development (falls back to local auth)
-# If you want to test Firebase, set FIREBASE_CREDENTIALS_PATH env variable
-if not FIREBASE_CREDENTIALS_PATH:
-    print("⚠️  Warning: FIREBASE_CREDENTIALS_PATH not set. Firebase authentication disabled for development.")
+# Firebase - Optional in development
+# Firebase Admin SDK is initialized in base.py using FIREBASE_SERVICE_ACCOUNT_KEY env variable
+# If not set, Firebase authentication will be disabled (falls back to local auth)
