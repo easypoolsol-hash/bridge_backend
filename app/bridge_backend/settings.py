@@ -27,6 +27,14 @@ DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 # Terraform/Cloud Run injects the correct Cloud Run URL
 ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
 
+# CSRF Protection - Fortune 500 / Google Cloud best practice
+# Read from environment variable injected by Terraform/Cloud Run
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+
+# CORS Configuration - Fortune 500 / Google Cloud best practice
+# Read from environment variable injected by Terraform/Cloud Run
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+
 
 # Application definition
 
