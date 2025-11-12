@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party apps
     "rest_framework",
+    "drf_spectacular",  # OpenAPI 3 schema generation
     "corsheaders",
     # Custom apps
     "accounts",
@@ -266,6 +267,39 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "100/hour",
         "user": "1000/hour",
+    },
+    # OpenAPI schema (drf-spectacular)
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# ==============================================================================
+# DRF-SPECTACULAR CONFIGURATION (OpenAPI 3.0 Schema Generation)
+# Google/Fortune 500 Best Practice: Auto-generated API documentation
+# ==============================================================================
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EasyPool Bridge API",
+    "DESCRIPTION": "Agent management system for insurance, loans, credit cards, and investments",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # Authentication
+    "SECURITY": [{"FirebaseAuth": []}],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "FirebaseAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Firebase ID token obtained from Firebase Authentication",
+            }
+        }
+    },
+    # Schema generation
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
+    # Enum behavior
+    "ENUM_NAME_OVERRIDES": {
+        "StatusEnum": "leads.models.Lead.STATUS_CHOICES",
     },
 }
 

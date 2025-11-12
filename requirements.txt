@@ -2,6 +2,9 @@
 Django==5.2.7
 djangorestframework==3.15.2
 
+# OpenAPI Schema Generation (Google/Fortune 500 best practice)
+drf-spectacular==0.27.0
+
 # Database
 psycopg2-binary==2.9.9
 
@@ -13,6 +16,9 @@ gunicorn==22.0.0
 
 # CORS
 django-cors-headers==4.3.1
+
+# Static files (Google Cloud Run best practice)
+whitenoise==6.6.0
 
 # Environment Variables
 python-decouple==3.8

@@ -16,9 +16,20 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.routers import DefaultRouter
 
 from bridge_backend.health import health_check, liveness_check, readiness_check
+from leads.viewsets import LeadViewSet
+from products.viewsets import MainCategoryViewSet, ProductViewSet, SubCategoryViewSet
+
+# API Router
+router = DefaultRouter()
+router.register(r"products/main-categories", MainCategoryViewSet, basename="main-category")
+router.register(r"products/sub-categories", SubCategoryViewSet, basename="sub-category")
+router.register(r"products/products", ProductViewSet, basename="product")
+router.register(r"leads", LeadViewSet, basename="lead")
 
 urlpatterns = [
     # Health checks (no auth required)
@@ -28,4 +39,10 @@ urlpatterns = [
     path("health/ready/", readiness_check, name="readiness_check"),
     # Admin
     path("admin/", admin.site.urls),
+    # API
+    path("api/", include(router.urls)),
+    # OpenAPI schema (for Flutter code generation)
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Swagger UI (for API testing)
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
