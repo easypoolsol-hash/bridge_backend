@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Lead, LeadDocument, LeadActivity
+from .models_forms import FormTemplate
 
 
 class LeadDocumentInline(admin.TabularInline):
@@ -58,3 +59,27 @@ class LeadActivityAdmin(admin.ModelAdmin):
     list_filter = ['activity_type', 'created_at']
     search_fields = ['lead__reference_number', 'description']
     readonly_fields = ['created_at']
+
+
+@admin.register(FormTemplate)
+class FormTemplateAdmin(admin.ModelAdmin):
+    list_display = ['title', 'product', 'is_shareable', 'is_active', 'created_at']
+    list_filter = ['is_shareable', 'is_active', 'product']
+    search_fields = ['title', 'description']
+    readonly_fields = ['share_token', 'created_at', 'updated_at']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('title', 'description', 'product')
+        }),
+        ('Form Schema', {
+            'fields': ('schema',),
+            'description': 'JSON schema defining form fields and validation'
+        }),
+        ('Sharing Settings', {
+            'fields': ('is_shareable', 'share_token', 'share_expiry')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'created_at', 'updated_at')
+        }),
+    )

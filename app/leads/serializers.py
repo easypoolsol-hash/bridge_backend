@@ -9,6 +9,7 @@ from products.models import Product, SubCategory
 from products.serializers import ProductListSerializer, SubCategorySerializer
 
 from .models import Lead, LeadActivity
+from .models_forms import FormTemplate
 
 
 class LeadListSerializer(serializers.ModelSerializer):
@@ -253,6 +254,91 @@ class LeadSubmitSerializer(serializers.Serializer):
             activity_type="status_change",
             description=description,
             metadata={"old_status": "draft", "new_status": "submitted"},
+        )
+
+        return lead
+
+
+# ============================================================================
+# FORM TEMPLATE SERIALIZERS (Dynamic Forms)
+# ============================================================================
+
+
+class FormTemplateSerializer(serializers.ModelSerializer):
+    """
+    Form template for dynamic forms
+    Used by agents to see available forms and by public for shared forms
+    """
+
+    product_name = serializers.CharField(source="product.name", read_only=True, allow_null=True)
+    share_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FormTemplate
+        fields = [
+            "id",
+            "title",
+            "description",
+            "product",
+            "product_name",
+            "schema",
+            "is_shareable",
+            "share_url",
+            "is_active",
+            "created_at",
+        ]
+        read_only_fields = ["id", "share_url", "created_at"]
+
+    def get_share_url(self, obj):
+        """Get share URL if form is shareable"""
+        return obj.share_url if obj.is_shareable else None
+
+
+class PublicFormSubmissionSerializer(serializers.Serializer):
+    """
+    Public form submission (for share links)
+    Minimal validation - accepts form_data as-is from frontend
+    """
+
+    form_data = serializers.JSONField()
+    customer_name = serializers.CharField(max_length=200)
+    customer_email = serializers.EmailField(required=False, allow_blank=True)
+    customer_phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    referral_code = serializers.CharField(max_length=50, required=False, allow_blank=True)
+
+    def validate_form_data(self, value):
+        """Basic validation - ensure it's a dict"""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("form_data must be a JSON object")
+        return value
+
+    def create(self, validated_data):
+        """
+        Create lead from public submission
+        No agent assigned (null)
+        """
+        form_template = self.context["form_template"]
+
+        # Create lead without agent
+        lead = Lead.objects.create(
+            product=form_template.product,
+            agent=None,  # No agent for public submissions
+            form_template=form_template,
+            customer_name=validated_data["customer_name"],
+            customer_email=validated_data.get("customer_email", ""),
+            customer_phone=validated_data.get("customer_phone", ""),
+            form_data=validated_data["form_data"],
+            source="public_share",
+            referral_code=validated_data.get("referral_code", ""),
+            status="submitted",
+        )
+
+        # Create activity
+        LeadActivity.objects.create(
+            lead=lead,
+            user=None,  # No user for public submission
+            activity_type="created",
+            description=f"Lead created via public share link: {form_template.title}",
         )
 
         return lead

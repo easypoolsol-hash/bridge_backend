@@ -3,6 +3,9 @@ from django.utils import timezone
 from accounts.models import User, Agent
 from products.models import Product
 
+# Import form template models
+from .models_forms import FormTemplate
+
 
 class Lead(models.Model):
     """
@@ -33,7 +36,18 @@ class Lead(models.Model):
     agent = models.ForeignKey(
         Agent,
         on_delete=models.PROTECT,
-        related_name='leads'
+        related_name='leads',
+        null=True,
+        blank=True,
+        help_text="Null for public share submissions"
+    )
+    form_template = models.ForeignKey(
+        'FormTemplate',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='submissions',
+        help_text="The form template used (if dynamic form)"
     )
 
     # Quick reference fields (duplicated from form_data for easy querying)

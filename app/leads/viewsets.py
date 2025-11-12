@@ -11,12 +11,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Lead
+from .models_forms import FormTemplate
 from .permissions import IsAgentOwner
 from .serializers import (
+    FormTemplateSerializer,
     LeadCreateSerializer,
     LeadDetailSerializer,
     LeadListSerializer,
     LeadSubmitSerializer,
+    PublicFormSubmissionSerializer,
 )
 
 
@@ -187,3 +190,117 @@ class LeadViewSet(viewsets.ModelViewSet):
         }
 
         return Response(stats)
+
+
+# ============================================================================
+# FORM TEMPLATE VIEWSETS (Dynamic Forms)
+# ============================================================================
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List available form templates",
+        description="Get all active form templates for creating leads",
+        tags=["Forms"],
+    ),
+    retrieve=extend_schema(
+        summary="Get form template details",
+        description="Get schema and details for a specific form template",
+        tags=["Forms"],
+    ),
+)
+class FormTemplateViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only viewset for form templates
+    Agents can see all active forms
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = FormTemplateSerializer
+    queryset = FormTemplate.objects.filter(is_active=True).select_related("product")
+    ordering = ["title"]
+
+
+@extend_schema(
+    summary="Get public form by share token",
+    description="Retrieve form template for public submission (no auth required)",
+    tags=["Forms - Public"],
+)
+@extend_schema(
+    summary="Submit public form",
+    description="Submit form data via public share link (no auth required)",
+    tags=["Forms - Public"],
+    request=PublicFormSubmissionSerializer,
+    responses={201: LeadDetailSerializer},
+)
+class PublicFormViewSet(viewsets.ViewSet):
+    """
+    Public form viewset (no authentication required)
+    Handles both form retrieval and submission via share token
+    """
+
+    permission_classes = []  # No authentication required
+
+    def retrieve(self, request, share_token=None):
+        """
+        GET /api/public/forms/{share_token}/
+        Get form template for filling
+        """
+        try:
+            form_template = FormTemplate.objects.get(
+                share_token=share_token, is_shareable=True, is_active=True
+            )
+        except FormTemplate.DoesNotExist:
+            return Response(
+                {"error": "Form not found or not accessible"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check expiry if set
+        if form_template.share_expiry:
+            from django.utils import timezone
+
+            if timezone.now() > form_template.share_expiry:
+                return Response(
+                    {"error": "This form link has expired"},
+                    status=status.HTTP_410_GONE,
+                )
+
+        serializer = FormTemplateSerializer(form_template)
+        return Response(serializer.data)
+
+    def create(self, request, share_token=None):
+        """
+        POST /api/public/forms/{share_token}/submit/
+        Submit form data publicly
+        """
+        try:
+            form_template = FormTemplate.objects.get(
+                share_token=share_token, is_shareable=True, is_active=True
+            )
+        except FormTemplate.DoesNotExist:
+            return Response(
+                {"error": "Form not found or not accessible"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check expiry
+        if form_template.share_expiry:
+            from django.utils import timezone
+
+            if timezone.now() > form_template.share_expiry:
+                return Response(
+                    {"error": "This form link has expired"},
+                    status=status.HTTP_410_GONE,
+                )
+
+        # Validate and create submission
+        serializer = PublicFormSubmissionSerializer(
+            data=request.data, context={"form_template": form_template}
+        )
+        serializer.is_valid(raise_exception=True)
+        lead = serializer.save()
+
+        # Return created lead details
+        detail_serializer = LeadDetailSerializer(lead)
+        return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
