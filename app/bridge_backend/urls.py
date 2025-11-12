@@ -16,16 +16,16 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.http import JsonResponse
 from django.urls import path
 
-
-def health_check(request):
-    """Health check endpoint for Cloud Run and smoke tests."""
-    return JsonResponse({"status": "ok", "service": "bridge-api"})
-
+from bridge_backend.health import health_check, liveness_check, readiness_check
 
 urlpatterns = [
-    path("", health_check, name="health"),
+    # Health checks (no auth required)
+    path("", health_check, name="health_check"),
+    path("health/", health_check, name="health"),
+    path("health/live/", liveness_check, name="liveness_check"),
+    path("health/ready/", readiness_check, name="readiness_check"),
+    # Admin
     path("admin/", admin.site.urls),
 ]
