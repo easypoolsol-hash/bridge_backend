@@ -13,20 +13,26 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-# CORS - Allow all origins in development
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
+# CORS - Read from environment (following backend_easy pattern)
+_cors_origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "")
+if _cors_origins_env:
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins_env.split(",") if origin.strip()]
+    CORS_ALLOW_CREDENTIALS = True
+else:
+    # Fallback for local development
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_CREDENTIALS = True
 
-# CSRF - Allow all origins in development
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://localhost:8080",
-    "http://localhost:8081",
-    "http://localhost:8082",
-    "http://localhost:8083",
-    "http://localhost:8084",
-]
+# CSRF - Read from environment (following backend_easy pattern)
+_csrf_origins_env = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if _csrf_origins_env:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in _csrf_origins_env.split(",") if origin.strip()]
+else:
+    # Fallback for local development
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
 
 # Database - SQLite for local development
 DATABASES = {
