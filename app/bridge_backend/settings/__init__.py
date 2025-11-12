@@ -23,7 +23,7 @@ else:
     # Local development
     env = "development"
 
-print(f"🔧 Loading settings for environment: {env}")
+print(f"[Django] Loading settings for environment: {env}")
 
 # Import the appropriate settings
 if env == "production":
