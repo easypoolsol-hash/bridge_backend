@@ -16,8 +16,16 @@ Including another URLconf
 """
 
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path
 
+
+def health_check(request):
+    """Health check endpoint for Cloud Run and smoke tests."""
+    return JsonResponse({"status": "ok", "service": "bridge-api"})
+
+
 urlpatterns = [
+    path("", health_check, name="health"),
     path("admin/", admin.site.urls),
 ]
