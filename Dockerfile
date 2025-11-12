@@ -120,6 +120,10 @@ run_db_init() {\n\
         echo "⚠️  [DB-INIT] Migrations failed"\n\
         return 1\n\
     fi\n\
+    \n\
+    # Create bootstrap admin (Google Cloud best practice)\n\
+    echo "👤 [DB-INIT] Creating bootstrap admin..."\n\
+    python manage.py create_hardcoded_admin || echo "⚠️  [DB-INIT] Admin creation deferred"\n\
 }\n\
 \n\
 # Start database initialization in background\n\
