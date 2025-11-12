@@ -50,14 +50,22 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
-            user.set_password(ADMIN_PASSWORD)
-            user.save()
 
-            action = "Created" if created else "Updated"
+            # Only set password on creation (Google Cloud best practice)
+            # Preserves password changes across deployments
+            if created:
+                user.set_password(ADMIN_PASSWORD)
+                user.save()
+
+            action = "Created" if created else "Verified"
             self.stdout.write(f"✅ [{action}] Bootstrap admin: {ADMIN_USERNAME}")
-            self.stdout.write(f"   Username: {ADMIN_USERNAME}")
-            self.stdout.write(f"   Password: {ADMIN_PASSWORD}")
-            self.stdout.write("   🔐 Change password after first login!")
+
+            if created:
+                self.stdout.write(f"   Username: {ADMIN_USERNAME}")
+                self.stdout.write(f"   Password: {ADMIN_PASSWORD}")
+                self.stdout.write("   🔐 Change password after first login!")
+            else:
+                self.stdout.write("   Password unchanged (preserving admin's custom password)")
 
         except Exception as e:
             self.stdout.write(f"[ERROR] Failed to create bootstrap admin: {e}")
