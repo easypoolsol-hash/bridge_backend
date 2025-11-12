@@ -35,6 +35,16 @@ CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get("CSRF_TRUSTE
 # Read from environment variable injected by Terraform/Cloud Run
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
 
+# Development: Allow localhost origins for Flutter web testing
+if DEBUG:
+    CORS_ALLOWED_ORIGINS.extend([
+        "http://localhost:8080",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:8083",
+        "http://localhost:8084",
+    ])
+
 
 # Application definition
 
