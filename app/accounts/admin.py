@@ -69,13 +69,6 @@ class UserAdmin(BaseUserAdmin):
                 "fields": ("firebase_uid", "user_type", "phone"),
             },
         ),
-        (
-            "Groups & Permissions",
-            {
-                "fields": ("groups",),
-                "description": "Assign user to groups. To promote user to Agent, add them to 'Agent' group.",
-            },
-        ),
     )
 
 

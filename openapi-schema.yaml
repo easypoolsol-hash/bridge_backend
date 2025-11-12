@@ -1,0 +1,1053 @@
+openapi: 3.0.3
+info:
+  title: EasyPool Bridge API
+  version: 1.0.0
+  description: Agent management system for insurance, loans, credit cards, and investments
+paths:
+  /api/leads/:
+    get:
+      operationId: leads_list
+      description: Returns all leads created by the authenticated agent
+      summary: List agent's leads
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Leads
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLeadListList'
+          description: ''
+    post:
+      operationId: leads_create
+      description: Create a lead and auto-assign to current agent
+      summary: Create a new lead
+      tags:
+      - Leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadCreate'
+          description: ''
+  /api/leads/{id}/:
+    get:
+      operationId: leads_retrieve
+      description: Get full details of a specific lead including activities
+      summary: Get lead details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Lead.
+        required: true
+      tags:
+      - Leads
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
+    put:
+      operationId: leads_update
+      description: Update lead information
+      summary: Update lead
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Lead.
+        required: true
+      tags:
+      - Leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadCreate'
+          description: ''
+    patch:
+      operationId: leads_partial_update
+      description: Update specific fields of a lead
+      summary: Partially update lead
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Lead.
+        required: true
+      tags:
+      - Leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLeadCreateRequest'
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadCreate'
+          description: ''
+    delete:
+      operationId: leads_destroy
+      description: Delete a draft lead (submitted leads cannot be deleted)
+      summary: Delete lead
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Lead.
+        required: true
+      tags:
+      - Leads
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/leads/{id}/submit/:
+    post:
+      operationId: leads_submit_create
+      description: Change lead status from draft to submitted
+      summary: Submit a draft lead
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Lead.
+        required: true
+      tags:
+      - Leads
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LeadSubmitRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LeadSubmitRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LeadSubmitRequest'
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeadDetail'
+          description: ''
+  /api/leads/my_stats/:
+    get:
+      operationId: leads_my_stats_retrieve
+      description: Get lead statistics for the current agent
+      summary: Get agent statistics
+      tags:
+      - Leads
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_leads:
+                    type: integer
+                  draft_leads:
+                    type: integer
+                  submitted_leads:
+                    type: integer
+                  in_progress_leads:
+                    type: integer
+                  converted_leads:
+                    type: integer
+                  rejected_leads:
+                    type: integer
+          description: ''
+  /api/products/main-categories/:
+    get:
+      operationId: products_main_categories_list
+      description: Returns active main categories (Insurance, Loans, etc.)
+      summary: List all main categories
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMainCategoryList'
+          description: ''
+  /api/products/main-categories/{slug}/:
+    get:
+      operationId: products_main_categories_retrieve
+      description: Get details of a specific main category
+      summary: Get main category details
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainCategory'
+          description: ''
+  /api/products/products/:
+    get:
+      operationId: products_products_list
+      description: Returns products filtered by category
+      summary: List products
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductListList'
+          description: ''
+  /api/products/products/{slug}/:
+    get:
+      operationId: products_products_retrieve
+      description: Get full details of a specific product
+      summary: Get product details
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+          description: ''
+  /api/products/products/featured/:
+    get:
+      operationId: products_products_featured_retrieve
+      description: Returns top products for agents to promote
+      summary: Get featured products
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductList'
+          description: ''
+  /api/products/sub-categories/:
+    get:
+      operationId: products_sub_categories_list
+      description: Returns insurance types (Health, Life, Car, etc.)
+      summary: List sub-categories
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubCategoryList'
+          description: ''
+  /api/products/sub-categories/{slug}/:
+    get:
+      operationId: products_sub_categories_retrieve
+      description: Get details of a specific insurance type
+      summary: Get sub-category details
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - Products
+      security:
+      - cookieAuth: []
+      - FirebaseAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubCategory'
+          description: ''
+components:
+  schemas:
+    ActivityTypeEnum:
+      enum:
+      - created
+      - status_change
+      - note_added
+      - document_uploaded
+      - assigned
+      - contacted
+      type: string
+      description: |-
+        * `created` - Lead Created
+        * `status_change` - Status Changed
+        * `note_added` - Note Added
+        * `document_uploaded` - Document Uploaded
+        * `assigned` - Assigned to User
+        * `contacted` - Customer Contacted
+    CommissionTypeEnum:
+      enum:
+      - percentage
+      - flat
+      type: string
+      description: |-
+        * `percentage` - Percentage
+        * `flat` - Flat Amount
+    LeadActivity:
+      type: object
+      description: Lead activity timeline
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        activity_type:
+          allOf:
+          - $ref: '#/components/schemas/ActivityTypeEnum'
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        metadata:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - activity_type
+      - created_at
+      - description
+      - id
+      - metadata
+      - user_name
+    LeadCreate:
+      type: object
+      description: |-
+        Serializer for creating/updating leads
+        Auto-assigns agent from Firebase authentication
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        customer_name:
+          type: string
+          description: For quick reference
+          maxLength: 200
+        customer_email:
+          type: string
+          format: email
+          maxLength: 254
+        customer_phone:
+          type: string
+          maxLength: 20
+        form_data:
+          description: Complete form submission data (flexible structure)
+        source:
+          type: string
+          description: mobile_app, web, referral
+          maxLength: 50
+        referral_code:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - customer_name
+      - form_data
+      - id
+    LeadCreateRequest:
+      type: object
+      description: |-
+        Serializer for creating/updating leads
+        Auto-assigns agent from Firebase authentication
+      properties:
+        product_id:
+          type: integer
+          writeOnly: true
+        sub_category_id:
+          type: integer
+          writeOnly: true
+        customer_name:
+          type: string
+          minLength: 1
+          description: For quick reference
+          maxLength: 200
+        customer_email:
+          type: string
+          format: email
+          maxLength: 254
+        customer_phone:
+          type: string
+          maxLength: 20
+        form_data:
+          description: Complete form submission data (flexible structure)
+        source:
+          type: string
+          minLength: 1
+          description: mobile_app, web, referral
+          maxLength: 50
+        referral_code:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - customer_name
+      - form_data
+      - product_id
+    LeadDetail:
+      type: object
+      description: Full lead details with activities
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference_number:
+          type: string
+          readOnly: true
+          description: e.g., LI-2025-123
+        product:
+          allOf:
+          - $ref: '#/components/schemas/ProductList'
+          readOnly: true
+        sub_category:
+          allOf:
+          - $ref: '#/components/schemas/SubCategory'
+          readOnly: true
+        agent_code:
+          type: string
+          readOnly: true
+        agent_name:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          description: For quick reference
+          maxLength: 200
+        customer_email:
+          type: string
+          format: email
+          maxLength: 254
+        customer_phone:
+          type: string
+          maxLength: 20
+        form_data:
+          description: Complete form submission data (flexible structure)
+        source:
+          type: string
+          description: mobile_app, web, referral
+          maxLength: 50
+        referral_code:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        assigned_to:
+          type: integer
+          nullable: true
+          description: Admin user assigned to process this lead
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeadActivity'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        converted_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - activities
+      - agent_code
+      - agent_name
+      - created_at
+      - customer_name
+      - form_data
+      - id
+      - product
+      - reference_number
+      - sub_category
+      - updated_at
+    LeadList:
+      type: object
+      description: |-
+        Lightweight serializer for lead lists
+        Used in agent dashboard
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reference_number:
+          type: string
+          readOnly: true
+          description: e.g., LI-2025-123
+        product:
+          type: integer
+        product_name:
+          type: string
+          readOnly: true
+        sub_category_name:
+          type: string
+          readOnly: true
+        agent_code:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          description: For quick reference
+          maxLength: 200
+        customer_email:
+          type: string
+          format: email
+          maxLength: 254
+        customer_phone:
+          type: string
+          maxLength: 20
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        source:
+          type: string
+          description: mobile_app, web, referral
+          maxLength: 50
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - agent_code
+      - created_at
+      - customer_name
+      - id
+      - product
+      - product_name
+      - reference_number
+      - sub_category_name
+      - updated_at
+    LeadSubmitRequest:
+      type: object
+      description: Serializer for submitting a draft lead
+      properties:
+        notes:
+          type: string
+    MainCategory:
+      type: object
+      description: |-
+        Main product categories (Insurance, Loans, etc.)
+        Read-only for agents
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: e.g., Insurance, Loans
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        icon:
+          type: string
+          readOnly: true
+          description: Icon name for Flutter
+        description:
+          type: string
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        display_order:
+          type: integer
+          readOnly: true
+        sub_categories_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active
+      - created_at
+      - description
+      - display_order
+      - icon
+      - id
+      - name
+      - slug
+      - sub_categories_count
+      - updated_at
+    PaginatedLeadListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeadList'
+    PaginatedMainCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MainCategory'
+    PaginatedProductListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductList'
+    PaginatedSubCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubCategory'
+    PatchedLeadCreateRequest:
+      type: object
+      description: |-
+        Serializer for creating/updating leads
+        Auto-assigns agent from Firebase authentication
+      properties:
+        product_id:
+          type: integer
+          writeOnly: true
+        sub_category_id:
+          type: integer
+          writeOnly: true
+        customer_name:
+          type: string
+          minLength: 1
+          description: For quick reference
+          maxLength: 200
+        customer_email:
+          type: string
+          format: email
+          maxLength: 254
+        customer_phone:
+          type: string
+          maxLength: 20
+        form_data:
+          description: Complete form submission data (flexible structure)
+        source:
+          type: string
+          minLength: 1
+          description: mobile_app, web, referral
+          maxLength: 50
+        referral_code:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+    ProductDetail:
+      type: object
+      description: Full product details including custom fields and form template
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: e.g., Term Life Plan, Home Loan Premium
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          readOnly: true
+        sub_category:
+          allOf:
+          - $ref: '#/components/schemas/SubCategory'
+          readOnly: true
+        main_category_name:
+          type: string
+          readOnly: true
+        key_features:
+          readOnly: true
+          description: List of key features/benefits
+        commission_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Commission percentage
+        commission_type:
+          allOf:
+          - $ref: '#/components/schemas/CommissionTypeEnum'
+          readOnly: true
+        custom_fields:
+          readOnly: true
+          description: Custom product info (provider, terms, etc.)
+        custom_form_fields:
+          readOnly: true
+          description: Override sub-category form template
+        active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active
+      - commission_rate
+      - commission_type
+      - created_at
+      - custom_fields
+      - custom_form_fields
+      - description
+      - id
+      - key_features
+      - main_category_name
+      - name
+      - slug
+      - sub_category
+      - updated_at
+    ProductList:
+      type: object
+      description: Lightweight product serializer for list views
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: e.g., Term Life Plan, Home Loan Premium
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+          readOnly: true
+        sub_category:
+          type: integer
+          readOnly: true
+        sub_category_name:
+          type: string
+          readOnly: true
+        main_category_name:
+          type: string
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active
+      - created_at
+      - description
+      - id
+      - main_category_name
+      - name
+      - slug
+      - sub_category
+      - sub_category_name
+    StatusEnum:
+      enum:
+      - draft
+      - submitted
+      - in_progress
+      - approved
+      - rejected
+      - converted
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `submitted` - Submitted
+        * `in_progress` - In Progress
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `converted` - Converted
+    SubCategory:
+      type: object
+      description: |-
+        Sub-categories (Health Insurance, Life Insurance, etc.)
+        Used for insurance type selection
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        main_category:
+          type: integer
+          readOnly: true
+        main_category_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          description: e.g., Life Insurance, Car Insurance
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        icon:
+          type: string
+          readOnly: true
+          description: Icon name for Flutter
+        description:
+          type: string
+          readOnly: true
+        active:
+          type: boolean
+          readOnly: true
+        display_order:
+          type: integer
+          readOnly: true
+        form_template:
+          readOnly: true
+          description: Default form fields for products in this sub-category
+        products_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - active
+      - created_at
+      - description
+      - display_order
+      - form_template
+      - icon
+      - id
+      - main_category
+      - main_category_name
+      - name
+      - products_count
+      - slug
+      - updated_at
+  securitySchemes:
+    FirebaseAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID token obtained from Firebase Authentication
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
