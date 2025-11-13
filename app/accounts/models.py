@@ -112,13 +112,23 @@ class Agent(models.Model):
     def save(self, *args, **kwargs):
         # Auto-generate agent code if not provided
         if not self.agent_code:
-            last_agent = Agent.objects.order_by('-id').first()
-            if last_agent:
-                last_num = int(last_agent.agent_code.replace('AGT', ''))
-                new_num = last_num + 1
+            import random
+
+            # Generate random agent code with collision detection
+            max_attempts = 100
+            for _ in range(max_attempts):
+                # Generate random 4-digit number (1000-9999)
+                random_num = random.randint(1000, 9999)
+                code = f"AGT{random_num}"
+
+                # Check if code already exists
+                if not Agent.objects.filter(agent_code=code).exists():
+                    self.agent_code = code
+                    break
             else:
-                new_num = 1
-            self.agent_code = f"AGT{new_num:04d}"
+                # Fallback: use timestamp-based code if all random attempts fail
+                import time
+                self.agent_code = f"AGT{int(time.time()) % 10000:04d}"
 
         # Auto-generate referral link
         if not self.referral_link:
