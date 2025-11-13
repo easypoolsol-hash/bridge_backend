@@ -82,7 +82,7 @@ class Command(BaseCommand):
         forms_created = 0
 
         # ==================== Life Insurance Form ====================
-        life_insurance_form, created = FormTemplate.objects.get_or_create(
+        life_insurance_form, created = FormTemplate.objects.update_or_create(
             title='Life Insurance Application',
             defaults={
                 'description': 'Complete this form to apply for life insurance coverage. '
@@ -180,7 +180,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'[OK] Created: {life_insurance_form.title}'))
 
         # ==================== Health Insurance Form ====================
-        health_insurance_form, created = FormTemplate.objects.get_or_create(
+        health_insurance_form, created = FormTemplate.objects.update_or_create(
             title='Health Insurance Application',
             defaults={
                 'description': 'Get comprehensive health coverage for you and your family. '
@@ -260,7 +260,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'[OK] Created: {health_insurance_form.title}'))
 
         # ==================== Car Insurance Form ====================
-        car_insurance_form, created = FormTemplate.objects.get_or_create(
+        car_insurance_form, created = FormTemplate.objects.update_or_create(
             title='Car Insurance Application',
             defaults={
                 'description': 'Comprehensive car insurance with cashless claim settlement. '
