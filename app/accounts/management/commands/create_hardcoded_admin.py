@@ -67,5 +67,27 @@ class Command(BaseCommand):
             else:
                 self.stdout.write("   Password unchanged (preserving admin's custom password)")
 
+            # Create Agent profile for admin user (required for lead creation)
+            try:
+                from accounts.models import Agent
+
+                agent, agent_created = Agent.objects.update_or_create(
+                    user=user,
+                    defaults={
+                        'agent_code': 'ADMIN001',
+                        'referral_link': f'/ref/admin',
+                        'commission_rate': 5.0,
+                        'status': 'active',
+                        'kyc_verified': True,
+                    }
+                )
+
+                agent_action = "Created" if agent_created else "Verified"
+                self.stdout.write(f"✅ [{agent_action}] Agent profile for admin: {agent.agent_code}")
+
+            except Exception as agent_error:
+                self.stdout.write(f"⚠️  [WARNING] Could not create agent profile: {agent_error}")
+                self.stdout.write("   Admin will need agent profile to create leads")
+
         except Exception as e:
             self.stdout.write(f"[ERROR] Failed to create bootstrap admin: {e}")
