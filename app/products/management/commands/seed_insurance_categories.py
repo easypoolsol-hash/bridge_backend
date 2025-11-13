@@ -27,7 +27,7 @@ class Command(BaseCommand):
         )
 
         if created:
-            self.stdout.write(self.style.SUCCESS(f"✓ Created main category: {insurance.name}"))
+            self.stdout.write(self.style.SUCCESS(f"[OK] Created main category: {insurance.name}"))
         else:
             self.stdout.write(f"  Main category already exists: {insurance.name}")
 
@@ -91,11 +91,11 @@ class Command(BaseCommand):
             )
 
             if created:
-                self.stdout.write(self.style.SUCCESS(f"  ✓ Created: {sub_cat.name}"))
+                self.stdout.write(self.style.SUCCESS(f"  [OK] Created: {sub_cat.name}"))
             else:
                 self.stdout.write(f"    Sub-category already exists: {sub_cat.name}")
 
-        self.stdout.write(self.style.SUCCESS("\n✅ Insurance categories seeded successfully!"))
+        self.stdout.write(self.style.SUCCESS("\n[SUCCESS] Insurance categories seeded successfully!"))
         self.stdout.write("\nNext steps:")
         self.stdout.write("  - Agents can now browse categories via API")
         self.stdout.write("  - Create leads by selecting insurance type")

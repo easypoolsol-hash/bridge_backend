@@ -30,12 +30,53 @@ class Command(BaseCommand):
 
         self.stdout.write('Seeding form templates...')
 
-        # Get products (optional - forms can work without products)
+        # Get or create products from sub-categories
         try:
-            life_product = Product.objects.filter(name__icontains='life').first()
-            health_product = Product.objects.filter(name__icontains='health').first()
-            car_product = Product.objects.filter(name__icontains='car').first()
-        except Product.DoesNotExist:
+            from products.models import SubCategory
+
+            # Get sub-categories
+            life_subcat = SubCategory.objects.filter(name__icontains='life').exclude(name__icontains='motor').first()
+            health_subcat = SubCategory.objects.filter(name__icontains='health').first()
+            car_subcat = SubCategory.objects.filter(name__icontains='car').first()
+
+            # Create products if they don't exist
+            life_product = None
+            if life_subcat:
+                life_product, _ = Product.objects.get_or_create(
+                    name='Life Insurance',
+                    defaults={
+                        'sub_category': life_subcat,
+                        'active': True,
+                        'commission_rate': 5.0,
+                        'commission_type': 'percentage'
+                    }
+                )
+
+            health_product = None
+            if health_subcat:
+                health_product, _ = Product.objects.get_or_create(
+                    name='Health Insurance',
+                    defaults={
+                        'sub_category': health_subcat,
+                        'active': True,
+                        'commission_rate': 5.0,
+                        'commission_type': 'percentage'
+                    }
+                )
+
+            car_product = None
+            if car_subcat:
+                car_product, _ = Product.objects.get_or_create(
+                    name='Car Insurance',
+                    defaults={
+                        'sub_category': car_subcat,
+                        'active': True,
+                        'commission_rate': 5.0,
+                        'commission_type': 'percentage'
+                    }
+                )
+        except Exception as e:
+            self.stdout.write(f'Warning: Could not create products: {e}')
             life_product = health_product = car_product = None
 
         forms_created = 0
