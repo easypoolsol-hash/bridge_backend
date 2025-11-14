@@ -100,11 +100,29 @@ USE_GCS_STORAGE = os.environ.get('USE_GCS_STORAGE', 'false').lower() == 'true'
 
 if USE_GCS_STORAGE:
     # Google Cloud Storage for production
-    DEFAULT_FILE_STORAGE = 'bridge_backend.storage.GoogleCloudStorage'
     GCS_BUCKET_NAME = os.environ.get('GCS_BUCKET_NAME', 'bridge-lead-pdfs')
+    print(f"[STORAGE] Using GCS storage: {GCS_BUCKET_NAME}")
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "bridge_backend.storage.GoogleCloudStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 else:
     # Local file storage for development
-    DEFAULT_FILE_STORAGE = 'bridge_backend.storage.LocalFileStorage'
+    print("[STORAGE] Using local file storage")
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "bridge_backend.storage.LocalFileStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 
 # Default primary key field type
