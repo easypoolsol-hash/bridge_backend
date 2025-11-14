@@ -92,19 +92,28 @@ class GoogleCloudStorage(Storage):
 
     def url(self, name):
         """
-        Get public URL for file
+        Get signed URL for file (secure, time-limited access)
 
         Args:
             name: File path/name
 
         Returns:
-            str: Public URL (full GCS URL)
+            str: Signed URL (expires in 1 hour)
         """
-        # Return full GCS public URL
-        # Format: https://storage.googleapis.com/{bucket_name}/{file_path}
-        url = f"https://storage.googleapis.com/{self.bucket_name}/{name}"
-        print(f"[GCS] Generating URL for {name}: {url}")
-        return url
+        from datetime import timedelta
+
+        blob = self.bucket.blob(name)
+
+        # Generate signed URL that expires in 1 hour
+        # This is industry standard for secure document access
+        signed_url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(hours=1),
+            method="GET"
+        )
+
+        print(f"[GCS] Generated signed URL for {name} (expires in 1 hour)")
+        return signed_url
 
     def delete(self, name):
         """
