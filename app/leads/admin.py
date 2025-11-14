@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Lead, LeadDocument, LeadActivity, Client
 from .models_forms import FormTemplate
 
@@ -70,21 +71,25 @@ class LeadAdmin(admin.ModelAdmin):
 
     inlines = [LeadDocumentInline, LeadActivityInline]
 
+    @admin.display(description='PDF')
     def pdf_link(self, obj):
         """Show PDF download link in list view"""
         if obj.pdf_file:
-            return f'<a href="{obj.pdf_file.url}" target="_blank">Download PDF</a>'
+            url = obj.pdf_file.url
+            return format_html('<a href="{}" target="_blank">📄 Download</a>', url)
         return "No PDF"
-    pdf_link.short_description = 'PDF'
-    pdf_link.allow_tags = True
 
+    @admin.display(description='PDF Document')
     def pdf_download_link(self, obj):
         """Show PDF download link in detail view"""
         if obj.pdf_file:
-            return f'<a href="{obj.pdf_file.url}" target="_blank" class="button">Download PDF</a>'
+            url = obj.pdf_file.url
+            # Show both URL and download button for debugging
+            return format_html(
+                '<div><p><strong>URL:</strong> {}</p><a href="{}" target="_blank" class="button">Download PDF</a></div>',
+                url, url
+            )
         return "PDF not available"
-    pdf_download_link.short_description = 'PDF Document'
-    pdf_download_link.allow_tags = True
 
 
 @admin.register(LeadDocument)

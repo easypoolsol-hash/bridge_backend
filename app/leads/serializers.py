@@ -130,9 +130,22 @@ class LeadListSerializer(serializers.ModelSerializer):
         ]
 
     def get_pdf_url(self, obj):
-        """Get PDF download URL"""
+        """Get PDF download URL - returns absolute URL for mobile app"""
         if obj.pdf_file:
-            return obj.pdf_file.url
+            # Get the relative URL from storage backend
+            relative_url = obj.pdf_file.url
+
+            # If URL is already absolute (starts with http), return as-is
+            if relative_url.startswith('http'):
+                return relative_url
+
+            # Otherwise, build absolute URL from request context
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(relative_url)
+
+            # Fallback: return relative URL (shouldn't happen in API)
+            return relative_url
         return None
 
 
@@ -215,9 +228,22 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         return obj.agent.user.get_full_name() or obj.agent.user.username
 
     def get_pdf_url(self, obj):
-        """Get PDF download URL"""
+        """Get PDF download URL - returns absolute URL for mobile app"""
         if obj.pdf_file:
-            return obj.pdf_file.url
+            # Get the relative URL from storage backend
+            relative_url = obj.pdf_file.url
+
+            # If URL is already absolute (starts with http), return as-is
+            if relative_url.startswith('http'):
+                return relative_url
+
+            # Otherwise, build absolute URL from request context
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(relative_url)
+
+            # Fallback: return relative URL (shouldn't happen in API)
+            return relative_url
         return None
 
 
