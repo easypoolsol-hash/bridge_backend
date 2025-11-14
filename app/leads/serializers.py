@@ -12,6 +12,81 @@ from products.serializers import ProductListSerializer, SubCategorySerializer
 from .models import Lead, LeadActivity, Client
 from .models_forms import FormTemplate
 from .pdf_generator import generate_lead_pdf, get_pdf_filename
+from django.db.models import Count
+
+
+# ============================================================================
+# CLIENT SERIALIZERS
+# ============================================================================
+
+
+class ClientListSerializer(serializers.ModelSerializer):
+    """
+    Client list serializer with lead count
+    Used for client list view
+    """
+
+    lead_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Client
+        fields = [
+            "id",
+            "name",
+            "phone",
+            "email",
+            "lead_count",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_lead_count(self, obj):
+        """Get count of leads for this client"""
+        return obj.leads.count()
+
+
+class ClientDetailSerializer(serializers.ModelSerializer):
+    """
+    Client detail serializer with all leads
+    Used for client detail view
+    """
+
+    leads = serializers.SerializerMethodField()
+    lead_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Client
+        fields = [
+            "id",
+            "name",
+            "phone",
+            "email",
+            "lead_count",
+            "leads",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_lead_count(self, obj):
+        """Get count of leads for this client"""
+        return obj.leads.count()
+
+    def get_leads(self, obj):
+        """Get all leads for this client"""
+        from .models import Lead
+        leads = obj.leads.select_related(
+            "product",
+            "product__sub_category",
+            "agent",
+            "agent__user",
+        ).order_by("-created_at")
+        return LeadListSerializer(leads, many=True).data
+
+
+# ============================================================================
+# LEAD SERIALIZERS
+# ============================================================================
 
 
 class LeadListSerializer(serializers.ModelSerializer):

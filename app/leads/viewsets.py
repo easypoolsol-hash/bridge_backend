@@ -10,10 +10,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import Lead
+from .models import Lead, Client
 from .models_forms import FormTemplate
 from .permissions import IsAgentOwner
 from .serializers import (
+    ClientDetailSerializer,
+    ClientListSerializer,
     FormTemplateSerializer,
     LeadCreateSerializer,
     LeadDetailSerializer,
@@ -35,6 +37,70 @@ class LeadFilter(filters.FilterSet):
     class Meta:
         model = Lead
         fields = ["status", "product", "sub_category", "created_after", "created_before"]
+
+
+# ============================================================================
+# CLIENT VIEWSETS
+# ============================================================================
+
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="List agent's clients",
+        description="Returns all unique clients that the authenticated agent has created leads for",
+        tags=["Clients"],
+    ),
+    retrieve=extend_schema(
+        summary="Get client details with leads",
+        description="Get full details of a specific client including all their leads",
+        tags=["Clients"],
+    ),
+)
+class ClientViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only viewset for clients
+    Agents can only see clients from their own leads
+    """
+
+    permission_classes = [IsAuthenticated]
+    search_fields = ["name", "phone", "email"]
+    ordering_fields = ["created_at", "name"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        """
+        Return clients for current agent only
+        Admins can see all clients
+        """
+        user = self.request.user
+
+        # Admins see all clients
+        if user.is_staff or user.is_superuser:
+            return Client.objects.all().prefetch_related("leads")
+
+        # Agents see only clients from their leads
+        if hasattr(user, "agent_profile"):
+            # Get distinct clients from agent's leads
+            client_ids = (
+                Lead.objects.filter(agent=user.agent_profile)
+                .values_list("client_id", flat=True)
+                .distinct()
+            )
+            return Client.objects.filter(id__in=client_ids).prefetch_related("leads")
+
+        # Users without agent profile see nothing
+        return Client.objects.none()
+
+    def get_serializer_class(self):
+        """Use different serializers for different actions"""
+        if self.action == "retrieve":
+            return ClientDetailSerializer
+        return ClientListSerializer
+
+
+# ============================================================================
+# LEAD VIEWSETS
+# ============================================================================
 
 
 @extend_schema_view(

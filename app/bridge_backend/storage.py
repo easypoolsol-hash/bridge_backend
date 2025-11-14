@@ -95,10 +95,11 @@ class GoogleCloudStorage(Storage):
             name: File path/name
 
         Returns:
-            str: Public URL
+            str: Public URL (full GCS URL)
         """
-        blob = self.bucket.blob(name)
-        return blob.public_url
+        # Return full GCS public URL
+        # Format: https://storage.googleapis.com/{bucket_name}/{file_path}
+        return f"https://storage.googleapis.com/{self.bucket_name}/{name}"
 
     def delete(self, name):
         """
