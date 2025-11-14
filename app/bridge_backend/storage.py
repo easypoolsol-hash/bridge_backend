@@ -54,8 +54,8 @@ class GoogleCloudStorage(Storage):
         # Upload file
         blob.upload_from_file(content, rewind=True)
 
-        # Make publicly accessible (for PDF downloads)
-        blob.make_public()
+        # Note: Bucket has uniform bucket-level access enabled
+        # Objects inherit bucket's public access settings automatically
 
         return name
 
