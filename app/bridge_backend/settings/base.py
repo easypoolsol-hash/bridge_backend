@@ -93,6 +93,19 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# File Storage Configuration
+# Use GCS for production, local storage for development
+import os
+USE_GCS_STORAGE = os.environ.get('USE_GCS_STORAGE', 'false').lower() == 'true'
+
+if USE_GCS_STORAGE:
+    # Google Cloud Storage for production
+    DEFAULT_FILE_STORAGE = 'bridge_backend.storage.GoogleCloudStorage'
+    GCS_BUCKET_NAME = os.environ.get('GCS_BUCKET_NAME', 'bridge-lead-pdfs')
+else:
+    # Local file storage for development
+    DEFAULT_FILE_STORAGE = 'bridge_backend.storage.LocalFileStorage'
+
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

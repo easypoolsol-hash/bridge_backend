@@ -4,12 +4,14 @@ Following Google/Fortune 500 best practices
 """
 
 from rest_framework import serializers
+from django.core.files.base import ContentFile
 
 from products.models import Product, SubCategory
 from products.serializers import ProductListSerializer, SubCategorySerializer
 
 from .models import Lead, LeadActivity, Client
 from .models_forms import FormTemplate
+from .pdf_generator import generate_lead_pdf, get_pdf_filename
 
 
 class LeadListSerializer(serializers.ModelSerializer):
@@ -21,6 +23,7 @@ class LeadListSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     sub_category_name = serializers.CharField(source="product.sub_category.name", read_only=True)
     agent_code = serializers.CharField(source="agent.agent_code", read_only=True)
+    pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -37,6 +40,7 @@ class LeadListSerializer(serializers.ModelSerializer):
             "customer_phone",
             "status",
             "source",
+            "pdf_url",
             "created_at",
             "updated_at",
         ]
@@ -45,9 +49,16 @@ class LeadListSerializer(serializers.ModelSerializer):
             "reference_number",
             "agent_code",
             "client",
+            "pdf_url",
             "created_at",
             "updated_at",
         ]
+
+    def get_pdf_url(self, obj):
+        """Get PDF download URL"""
+        if obj.pdf_file:
+            return obj.pdf_file.url
+        return None
 
 
 class LeadActivitySerializer(serializers.ModelSerializer):
@@ -86,6 +97,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     agent_code = serializers.CharField(source="agent.agent_code", read_only=True)
     agent_name = serializers.SerializerMethodField()
     activities = LeadActivitySerializer(many=True, read_only=True)
+    pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -105,6 +117,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             "referral_code",
             "status",
             "assigned_to",
+            "pdf_url",
             "activities",
             "created_at",
             "updated_at",
@@ -116,6 +129,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             "agent_code",
             "agent_name",
             "client",
+            "pdf_url",
             "activities",
             "created_at",
             "updated_at",
@@ -124,6 +138,12 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     def get_agent_name(self, obj):
         """Get agent's full name"""
         return obj.agent.user.get_full_name() or obj.agent.user.username
+
+    def get_pdf_url(self, obj):
+        """Get PDF download URL"""
+        if obj.pdf_file:
+            return obj.pdf_file.url
+        return None
 
 
 class LeadCreateSerializer(serializers.ModelSerializer):
@@ -229,6 +249,15 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             activity_type="created",
             description=f"Lead created by agent {user.agent_profile.agent_code}",
         )
+
+        # Generate and save PDF (auto-generation on submission)
+        try:
+            pdf_bytes = generate_lead_pdf(lead)
+            pdf_filename = get_pdf_filename(lead)
+            lead.pdf_file.save(pdf_filename, ContentFile(pdf_bytes), save=True)
+        except Exception as e:
+            # Log error but don't fail lead creation
+            print(f"[PDF] Failed to generate PDF for lead {lead.reference_number}: {e}")
 
         return lead
 
@@ -400,5 +429,14 @@ class PublicFormSubmissionSerializer(serializers.Serializer):
             activity_type="created",
             description=f"Lead created via public share link: {form_template.title}",
         )
+
+        # Generate and save PDF (auto-generation on submission)
+        try:
+            pdf_bytes = generate_lead_pdf(lead)
+            pdf_filename = get_pdf_filename(lead)
+            lead.pdf_file.save(pdf_filename, ContentFile(pdf_bytes), save=True)
+        except Exception as e:
+            # Log error but don't fail lead creation
+            print(f"[PDF] Failed to generate PDF for lead {lead.reference_number}: {e}")
 
         return lead

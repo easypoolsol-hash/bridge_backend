@@ -35,10 +35,10 @@ class ClientAdmin(admin.ModelAdmin):
 
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ['reference_number', 'customer_name', 'client', 'product', 'agent', 'status', 'created_at']
+    list_display = ['reference_number', 'customer_name', 'client', 'product', 'agent', 'status', 'pdf_link', 'created_at']
     list_filter = ['status', 'product__sub_category__main_category', 'product__sub_category', 'created_at']
     search_fields = ['reference_number', 'customer_name', 'customer_email', 'customer_phone', 'client__name', 'client__phone']
-    readonly_fields = ['reference_number', 'client', 'created_at', 'updated_at']
+    readonly_fields = ['reference_number', 'client', 'pdf_download_link', 'created_at', 'updated_at']
 
     fieldsets = (
         ('Lead Information', {
@@ -55,6 +55,10 @@ class LeadAdmin(admin.ModelAdmin):
             'fields': ('form_data',),
             'classes': ('collapse',)
         }),
+        ('PDF Document', {
+            'fields': ('pdf_download_link',),
+            'description': 'Auto-generated PDF (created on form submission)'
+        }),
         ('Assignment', {
             'fields': ('assigned_to',)
         }),
@@ -65,6 +69,22 @@ class LeadAdmin(admin.ModelAdmin):
     )
 
     inlines = [LeadDocumentInline, LeadActivityInline]
+
+    def pdf_link(self, obj):
+        """Show PDF download link in list view"""
+        if obj.pdf_file:
+            return f'<a href="{obj.pdf_file.url}" target="_blank">Download PDF</a>'
+        return "No PDF"
+    pdf_link.short_description = 'PDF'
+    pdf_link.allow_tags = True
+
+    def pdf_download_link(self, obj):
+        """Show PDF download link in detail view"""
+        if obj.pdf_file:
+            return f'<a href="{obj.pdf_file.url}" target="_blank" class="button">Download PDF</a>'
+        return "PDF not available"
+    pdf_download_link.short_description = 'PDF Document'
+    pdf_download_link.allow_tags = True
 
 
 @admin.register(LeadDocument)

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lead Form - {{ lead.reference_number }}</title>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>LEAD SUBMISSION FORM</h1>
+        <div class="reference">Reference: {{ lead.reference_number }}</div>
+        <div class="reference">{{ product.category.name }} - {{ product.sub_category.name }}</div>
+    </div>
+
+    <!-- Client Information -->
+    <div class="section">
+        <div class="section-title">CLIENT INFORMATION</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Client ID</div>
+                <div class="info-value">{{ client.id }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Name</div>
+                <div class="info-value">{{ lead.customer_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Phone Number</div>
+                <div class="info-value">{{ lead.customer_phone }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Email Address</div>
+                <div class="info-value">{{ lead.customer_email|default:"N/A" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Information -->
+    <div class="section">
+        <div class="section-title">PRODUCT DETAILS</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Product Name</div>
+                <div class="info-value">{{ product.name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Category</div>
+                <div class="info-value">{{ product.category.name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Sub-Category</div>
+                <div class="info-value">{{ product.sub_category.name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Status</div>
+                <div class="info-value">{{ lead.get_status_display }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Information (if applicable) -->
+    {% if agent %}
+    <div class="section">
+        <div class="section-title">AGENT INFORMATION</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Agent Name</div>
+                <div class="info-value">{{ agent.user.get_full_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Agent Code</div>
+                <div class="info-value">{{ agent.agent_code }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Contact Number</div>
+                <div class="info-value">{{ agent.phone_number }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ agent.user.email }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Form Data -->
+    <div class="section">
+        <div class="section-title">FORM DETAILS</div>
+        {% for field_name, field_value in form_data.items %}
+        <div class="form-field">
+            <div class="info-label">{{ field_name|title }}</div>
+            <div class="info-value">
+                {% if field_value is not None %}
+                    {{ field_value }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Submission Details -->
+    <div class="section">
+        <div class="section-title">SUBMISSION DETAILS</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Submitted On</div>
+                <div class="info-value">{{ lead.created_at|date:"d M Y, h:i A" }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Source</div>
+                <div class="info-value">{{ lead.source|upper }}</div>
+            </div>
+            {% if lead.referral_code %}
+            <div class="info-item">
+                <div class="info-label">Referral Code</div>
+                <div class="info-value">{{ lead.referral_code }}</div>
+            </div>
+            {% endif %}
+            <div class="info-item">
+                <div class="info-label">PDF Generated</div>
+                <div class="info-value">{{ generated_at|date:"d M Y, h:i A" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>This is a system-generated document. No signature required.</p>
+        <p>Generated by EasyPool Bridge System | {{ generated_at|date:"d M Y" }}</p>
+    </div>
+</body>
+</html>

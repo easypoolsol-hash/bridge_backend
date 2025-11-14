@@ -109,6 +109,14 @@ class Lead(models.Model):
         help_text="Complete form submission data (flexible structure)"
     )
 
+    # PDF Document (auto-generated on submission)
+    pdf_file = models.FileField(
+        upload_to='lead_pdfs/%Y/%m/',
+        null=True,
+        blank=True,
+        help_text="Auto-generated PDF of lead form (created on submission)"
+    )
+
     # Metadata
     source = models.CharField(
         max_length=50,

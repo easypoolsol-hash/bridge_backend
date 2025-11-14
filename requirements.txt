@@ -25,3 +25,10 @@ python-decouple==3.8
 
 # Timezone Support
 pytz==2024.1
+
+# PDF Generation (HTML to PDF - Fortune 500 best practice)
+WeasyPrint==62.3
+Pillow==10.2.0
+
+# Google Cloud Storage (for PDF archival)
+google-cloud-storage>=3.1.1
