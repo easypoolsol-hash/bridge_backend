@@ -103,7 +103,9 @@ class GoogleCloudStorage(Storage):
         """
         # Return full GCS public URL
         # Format: https://storage.googleapis.com/{bucket_name}/{file_path}
-        return f"https://storage.googleapis.com/{self.bucket_name}/{name}"
+        url = f"https://storage.googleapis.com/{self.bucket_name}/{name}"
+        print(f"[GCS] Generating URL for {name}: {url}")
+        return url
 
     def delete(self, name):
         """
@@ -165,7 +167,9 @@ class LocalFileStorage(Storage):
         return self._storage.exists(name)
 
     def url(self, name):
-        return self._storage.url(name)
+        url = self._storage.url(name)
+        print(f"[LOCAL] Generating URL for {name}: {url}")
+        return url
 
     def delete(self, name):
         return self._storage.delete(name)
