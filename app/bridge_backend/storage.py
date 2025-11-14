@@ -20,6 +20,7 @@ class GoogleCloudStorage(Storage):
     def __init__(self):
         # Get GCS configuration from environment
         self.bucket_name = os.environ.get('GCS_BUCKET_NAME', 'bridge-lead-pdfs')
+        self.project_id = os.environ.get('GCS_PROJECT_ID', 'bridge-477812')
         credentials_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
 
         if credentials_json:
@@ -28,10 +29,13 @@ class GoogleCloudStorage(Storage):
             credentials = service_account.Credentials.from_service_account_info(
                 credentials_dict
             )
-            self.client = storage.Client(credentials=credentials)
+            self.client = storage.Client(
+                credentials=credentials,
+                project=self.project_id
+            )
         else:
-            # Use default credentials (for local development)
-            self.client = storage.Client()
+            # Use default credentials (Cloud Run service account)
+            self.client = storage.Client(project=self.project_id)
 
         self.bucket = self.client.bucket(self.bucket_name)
 
