@@ -14,10 +14,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DEFAULT_TIMEOUT=100
 
 # Install system build dependencies (minimal set for Python packages)
+# WeasyPrint PDF generation dependencies added
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     pkg-config \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -40,9 +46,15 @@ RUN pip install gunicorn>=22.0.0 whitenoise>=6.6.0
 FROM python:3.11-slim-bookworm AS runtime
 
 # Install only runtime system dependencies
+# WeasyPrint runtime dependencies added for PDF generation
 RUN apt-get update && apt-get install -y \
     curl \
     libpq5 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi7 \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     && groupadd -r django && useradd -r -g django django
