@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Lead, LeadDocument, LeadActivity
+from .models import Lead, LeadDocument, LeadActivity, Client
 from .models_forms import FormTemplate
 
 
@@ -15,16 +15,38 @@ class LeadActivityInline(admin.TabularInline):
     readonly_fields = ['activity_type', 'description', 'user', 'created_at']
 
 
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'phone', 'email', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['name', 'phone', 'email']
+    readonly_fields = ['created_at', 'updated_at']
+
+    fieldsets = (
+        ('Client Information', {
+            'fields': ('name', 'phone', 'email')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
 @admin.register(Lead)
 class LeadAdmin(admin.ModelAdmin):
-    list_display = ['reference_number', 'customer_name', 'product', 'agent', 'status', 'created_at']
+    list_display = ['reference_number', 'customer_name', 'client', 'product', 'agent', 'status', 'created_at']
     list_filter = ['status', 'product__sub_category__main_category', 'product__sub_category', 'created_at']
-    search_fields = ['reference_number', 'customer_name', 'customer_email', 'customer_phone']
-    readonly_fields = ['reference_number', 'created_at', 'updated_at']
+    search_fields = ['reference_number', 'customer_name', 'customer_email', 'customer_phone', 'client__name', 'client__phone']
+    readonly_fields = ['reference_number', 'client', 'created_at', 'updated_at']
 
     fieldsets = (
         ('Lead Information', {
             'fields': ('reference_number', 'product', 'agent', 'status')
+        }),
+        ('Client Information', {
+            'fields': ('client',),
+            'description': 'Auto-assigned client (Google-style ID)'
         }),
         ('Customer Details', {
             'fields': ('customer_name', 'customer_email', 'customer_phone')
