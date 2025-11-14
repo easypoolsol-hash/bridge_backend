@@ -7,6 +7,47 @@ from products.models import Product
 from .models_forms import FormTemplate
 
 
+class Client(models.Model):
+    """
+    Client/Customer identity table
+    One client can have multiple leads across different products
+    Uses Google-style immutable ID approach
+    """
+    # Contact info (changeable)
+    phone = models.CharField(
+        max_length=20,
+        unique=True,
+        db_index=True,
+        help_text="Primary unique identifier - phone number"
+    )
+    email = models.EmailField(
+        blank=True,
+        db_index=True,
+        help_text="Email address (optional, can change)"
+    )
+    name = models.CharField(
+        max_length=200,
+        help_text="Customer name (can change)"
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'leads_client'
+        verbose_name = 'Client'
+        verbose_name_plural = 'Clients'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['phone']),
+            models.Index(fields=['email']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.phone})"
+
+
 class Lead(models.Model):
     """
     Main lead model - handles ALL product types with flexible JSON storage
@@ -48,6 +89,14 @@ class Lead(models.Model):
         blank=True,
         related_name='submissions',
         help_text="The form template used (if dynamic form)"
+    )
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.PROTECT,
+        related_name='leads',
+        null=True,
+        blank=True,
+        help_text="Client who submitted this lead (Google-style immutable ID)"
     )
 
     # Quick reference fields (duplicated from form_data for easy querying)

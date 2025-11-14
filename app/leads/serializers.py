@@ -8,7 +8,7 @@ from rest_framework import serializers
 from products.models import Product, SubCategory
 from products.serializers import ProductListSerializer, SubCategorySerializer
 
-from .models import Lead, LeadActivity
+from .models import Lead, LeadActivity, Client
 from .models_forms import FormTemplate
 
 
@@ -31,6 +31,7 @@ class LeadListSerializer(serializers.ModelSerializer):
             "product_name",
             "sub_category_name",
             "agent_code",
+            "client",
             "customer_name",
             "customer_email",
             "customer_phone",
@@ -43,6 +44,7 @@ class LeadListSerializer(serializers.ModelSerializer):
             "id",
             "reference_number",
             "agent_code",
+            "client",
             "created_at",
             "updated_at",
         ]
@@ -94,6 +96,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             "sub_category",
             "agent_code",
             "agent_name",
+            "client",
             "customer_name",
             "customer_email",
             "customer_phone",
@@ -112,6 +115,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             "reference_number",
             "agent_code",
             "agent_name",
+            "client",
             "activities",
             "created_at",
             "updated_at",
@@ -170,6 +174,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Create lead and auto-assign to current agent
+        Uses Google-style client resolution: find or create client
         """
         product_id = validated_data.pop("product_id")
         validated_data.pop("sub_category_id", None)  # Remove if present
@@ -184,9 +189,37 @@ class LeadCreateSerializer(serializers.ModelSerializer):
                 "User must have an agent profile to create leads"
             )
 
-        # Create lead
+        # ============================================
+        # CLIENT RESOLUTION (Google-style)
+        # ============================================
+        customer_phone = validated_data.get("customer_phone", "").strip()
+        customer_email = validated_data.get("customer_email", "").strip()
+        customer_name = validated_data.get("customer_name", "").strip()
+
+        client = None
+
+        # Try to find existing client by phone (primary identifier)
+        if customer_phone:
+            client = Client.objects.filter(phone=customer_phone).first()
+
+        # Fallback: try to find by email if phone lookup failed
+        if not client and customer_email:
+            client = Client.objects.filter(email=customer_email).first()
+
+        # If no existing client found, create new one
+        if not client:
+            client = Client.objects.create(
+                phone=customer_phone or "",
+                email=customer_email or "",
+                name=customer_name,
+            )
+
+        # Create lead with resolved client
         lead = Lead.objects.create(
-            product=product, agent=user.agent_profile, **validated_data
+            product=product,
+            agent=user.agent_profile,
+            client=client,
+            **validated_data
         )
 
         # Create activity
@@ -316,17 +349,44 @@ class PublicFormSubmissionSerializer(serializers.Serializer):
         """
         Create lead from public submission
         No agent assigned (null)
+        Uses Google-style client resolution
         """
         form_template = self.context["form_template"]
 
-        # Create lead without agent
+        # ============================================
+        # CLIENT RESOLUTION (Google-style)
+        # ============================================
+        customer_phone = validated_data.get("customer_phone", "").strip()
+        customer_email = validated_data.get("customer_email", "").strip()
+        customer_name = validated_data.get("customer_name", "").strip()
+
+        client = None
+
+        # Try to find existing client by phone (primary identifier)
+        if customer_phone:
+            client = Client.objects.filter(phone=customer_phone).first()
+
+        # Fallback: try to find by email if phone lookup failed
+        if not client and customer_email:
+            client = Client.objects.filter(email=customer_email).first()
+
+        # If no existing client found, create new one
+        if not client:
+            client = Client.objects.create(
+                phone=customer_phone or "",
+                email=customer_email or "",
+                name=customer_name,
+            )
+
+        # Create lead without agent but with resolved client
         lead = Lead.objects.create(
             product=form_template.product,
             agent=None,  # No agent for public submissions
             form_template=form_template,
-            customer_name=validated_data["customer_name"],
-            customer_email=validated_data.get("customer_email", ""),
-            customer_phone=validated_data.get("customer_phone", ""),
+            client=client,
+            customer_name=customer_name,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
             form_data=validated_data["form_data"],
             source="public_share",
             referral_code=validated_data.get("referral_code", ""),
