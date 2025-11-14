@@ -5,7 +5,6 @@ Following Fortune 500 best practices for file storage
 
 import os
 from django.core.files.storage import Storage
-from django.utils.decoding import force_bytes, force_str
 from google.cloud import storage
 from google.oauth2 import service_account
 import json
