@@ -91,6 +91,5 @@ LOGGING = {
     },
 }
 
-# Firebase - Required for staging
-if not FIREBASE_CREDENTIALS_PATH:
-    raise ValueError("FIREBASE_CREDENTIALS_PATH environment variable is required for staging")
+# Firebase - Initialized in base.py using FIREBASE_SERVICE_ACCOUNT_KEY from Secret Manager
+# No additional configuration needed here
