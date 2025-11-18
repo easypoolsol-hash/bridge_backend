@@ -94,22 +94,43 @@ class GoogleCloudStorage(Storage):
         """
         Get signed URL for file (secure, time-limited access)
 
+        Uses IAM signBlob API for Cloud Run environments without service account keys.
+        Works on Cloud Run with Service Account Token Creator IAM role.
+
         Args:
             name: File path/name
 
         Returns:
             str: Signed URL (expires in 1 hour)
+
+        Raises:
+            google.api_core.exceptions.PermissionDenied: If service account lacks Token Creator role
         """
         from datetime import timedelta
+        from google import auth
+        from google.auth.transport import requests
 
         blob = self.bucket.blob(name)
 
-        # Generate signed URL that expires in 1 hour
-        # This is industry standard for secure document access
+        # Get default credentials with IAM scope to enable signBlob API
+        # This is Google's standard approach for Cloud Run 2025
+        credentials, _project_id = auth.default(
+            scopes=["https://www.googleapis.com/auth/iam"]
+        )
+
+        # Refresh credentials to obtain access token (required for signing)
+        auth_request = requests.Request()
+        credentials.refresh(auth_request)
+
+        # Generate signed URL using IAM signBlob API
+        # Requires both service_account_email and access_token for Cloud Run
+        # This is the industry standard pattern for Cloud Run without service account keys
         signed_url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(hours=1),
-            method="GET"
+            method="GET",
+            service_account_email=credentials.service_account_email,
+            access_token=credentials.token,
         )
 
         print(f"[GCS] Generated signed URL for {name} (expires in 1 hour)")
