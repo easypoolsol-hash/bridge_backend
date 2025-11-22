@@ -129,15 +129,6 @@ run_db_init() {\n\
     if python manage.py migrate --noinput; then\n\
         echo "✅ [DB-INIT] Migrations completed"\n\
         \n\
-        # Seed groups and permissions (Google Cloud IAM best practice)\n\
-        # Only runs if migrations succeed (DB is working)\n\
-        echo "🔐 [DB-INIT] Seeding groups and permissions..."\n\
-        if python manage.py seed_groups; then\n\
-            echo "✅ [DB-INIT] Groups seeded successfully"\n\
-        else\n\
-            echo "⚠️  [DB-INIT] Group seeding failed (non-critical)"\n\
-        fi\n\
-        \n\
         # Create bootstrap admin (Google Cloud best practice)\n\
         # Only runs if migrations succeed (DB is working)\n\
         echo "👤 [DB-INIT] Creating bootstrap admin..."\n\

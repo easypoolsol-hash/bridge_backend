@@ -67,49 +67,51 @@ class Command(BaseCommand):
             # Create or get group
             group, created = Group.objects.get_or_create(name=group_name)
 
-            # Clear existing permissions (idempotent)
-            group.permissions.clear()
+            if created:
+                # Only set permissions for NEW groups
+                # Existing groups keep their permissions (set by superuser in admin)
+                self.stdout.write(f"  Created group: {group_name}")
 
-            action = "Created" if created else "Updated"
-            self.stdout.write(f"  {action} group: {group_name}")
+                # Add permissions
+                permission_count = 0
+                for app_label, models_config in apps_config.items():
+                    for model_name, permission_codes in models_config.items():
+                        try:
+                            # Get content type for model
+                            content_type = ContentType.objects.get(app_label=app_label, model=model_name)
 
-            # Add permissions
-            permission_count = 0
-            for app_label, models_config in apps_config.items():
-                for model_name, permission_codes in models_config.items():
-                    try:
-                        # Get content type for model
-                        content_type = ContentType.objects.get(app_label=app_label, model=model_name)
+                            for perm_code in permission_codes:
+                                # Format: add_user, change_user, delete_user, view_user
+                                permission_codename = f"{perm_code}_{model_name}"
 
-                        for perm_code in permission_codes:
-                            # Format: add_user, change_user, delete_user, view_user
-                            permission_codename = f"{perm_code}_{model_name}"
-
-                            try:
-                                permission = Permission.objects.get(
-                                    codename=permission_codename,
-                                    content_type=content_type,
-                                )
-                                group.permissions.add(permission)
-                                permission_count += 1
-
-                            except Permission.DoesNotExist:
-                                self.stdout.write(
-                                    self.style.WARNING(
-                                        f"    ⚠️  Permission not found: {permission_codename} "
-                                        f"(app: {app_label}, model: {model_name})"
+                                try:
+                                    permission = Permission.objects.get(
+                                        codename=permission_codename,
+                                        content_type=content_type,
                                     )
+                                    group.permissions.add(permission)
+                                    permission_count += 1
+
+                                except Permission.DoesNotExist:
+                                    self.stdout.write(
+                                        self.style.WARNING(
+                                            f"    ⚠️  Permission not found: {permission_codename} "
+                                            f"(app: {app_label}, model: {model_name})"
+                                        )
+                                    )
+
+                        except ContentType.DoesNotExist:
+                            self.stdout.write(
+                                self.style.WARNING(
+                                    f"    ⚠️  Model not found: {app_label}.{model_name} "
+                                    f"(run migrations first)"
                                 )
-
-                    except ContentType.DoesNotExist:
-                        self.stdout.write(
-                            self.style.WARNING(
-                                f"    ⚠️  Model not found: {app_label}.{model_name} "
-                                f"(run migrations first)"
                             )
-                        )
 
-            self.stdout.write(f"    → {permission_count} permissions assigned")
+                self.stdout.write(f"    → {permission_count} permissions assigned")
+            else:
+                # Group already exists - preserve superuser's manual changes
+                self.stdout.write(f"  Skipped group: {group_name} (already exists, permissions preserved)")
 
         self.stdout.write(
             self.style.SUCCESS(
